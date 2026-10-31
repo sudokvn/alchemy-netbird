@@ -1,0 +1,12 @@
+node_modules/
+.alchemy/
+# Build output and the release tarballs from `pnpm release:pack`.
+packages/*/lib/
+release/
+# Copied from the repository root when a package is packed.
+packages/*/LICENSE
+packages/*/NOTICE
+# Written by `pnpm --filter @distilled.cloud/netbird convert`; never committed.
+packages/netbird/.generated-specs/
+# Local notes and scratch files.
+.local/

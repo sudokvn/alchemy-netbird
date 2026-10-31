@@ -1,0 +1,6 @@
+{
+  "ignorePatterns": [".local/**", "packages/*/lib/**", "packages/netbird/src/services/**"],
+  "rules": {
+    "typescript/no-explicit-any": "error"
+  }
+}

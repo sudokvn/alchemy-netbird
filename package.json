@@ -1,0 +1,29 @@
+{
+  "name": "alchemy-netbird",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:server": "vitest run --config vitest.server.config.ts",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "specs:fetch": "pnpm --filter @distilled.cloud/netbird specs:fetch",
+    "generate": "pnpm --filter @distilled.cloud/netbird generate && pnpm format",
+    "release:pack": "rm -rf release && pnpm -r pack --pack-destination release"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@12.15.0"
+}

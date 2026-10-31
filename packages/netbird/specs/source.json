@@ -1,0 +1,7 @@
+{
+  "repository": "netbirdio/netbird",
+  "path": "shared/management/http/api/openapi.yml",
+  "tag": "v0.82.0",
+  "commit": "3c00a97878e6af537d28c3bdd4f42cb4286aa883",
+  "sha256": "ed8792e57130fb81abbf9ca16efff785edad7cd9d662efcbc83f21cc43d5199a"
+}
