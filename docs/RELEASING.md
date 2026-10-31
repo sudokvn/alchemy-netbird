@@ -60,8 +60,8 @@ project's copies; the provider is tested with `alchemy` 2.0.0-beta.84:
 ```json
 {
   "dependencies": {
-    "@alchemy.run/netbird": "https://github.com/trucke/alchemy-netbird/releases/download/v0.1.0/alchemy.run-netbird-0.1.0.tgz",
-    "@distilled.cloud/netbird": "https://github.com/trucke/alchemy-netbird/releases/download/v0.1.0/distilled.cloud-netbird-0.1.0.tgz",
+    "@alchemy.run/netbird": "https://github.com/trucke/alchemy-netbird/releases/download/v0.1.1/alchemy.run-netbird-0.1.1.tgz",
+    "@distilled.cloud/netbird": "https://github.com/trucke/alchemy-netbird/releases/download/v0.1.1/distilled.cloud-netbird-0.1.1.tgz",
     "alchemy": "2.0.0-beta.84",
     "effect": "4.0.5"
   }
