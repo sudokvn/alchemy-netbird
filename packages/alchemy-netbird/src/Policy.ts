@@ -346,36 +346,47 @@ const resolveEndpoint = (
       );
 };
 
-/** The API request for a declaration, with names resolved to IDs. */
-export const toRequest = (props: PolicyProps, directory: Directory, ruleId?: string) =>
-  Effect.gen(function* () {
-    const from = yield* resolveEndpoint(props.name, "from", props.from, directory);
-    const to = yield* resolveEndpoint(props.name, "to", props.to, directory);
-    const desired = desiredState(props);
-    const body: NetBird.CreatePolicyRequest = {
-      name: desired.name,
-      description: desired.description,
-      enabled: desired.enabled,
-      source_posture_checks: [],
-      rules: [
-        {
-          ...(ruleId === undefined ? {} : { id: ruleId }),
-          name: desired.ruleName,
-          description: "",
-          enabled: true,
-          action: "accept",
-          bidirectional: desired.bidirectional,
-          protocol: props.protocol,
-          ...(desired.ports.length === 0 ? {} : { ports: desired.ports.map(String) }),
-          ...("resource" in from ? { sourceResource: from.resource } : { sources: from.groups }),
-          ...("resource" in to
-            ? { destinationResource: to.resource }
-            : { destinations: to.groups }),
-        },
-      ],
-    };
-    return body;
+/** A declaration's source and destination with names resolved to IDs. */
+export interface ResolvedEndpoints {
+  readonly from: EndpointRequest;
+  readonly to: EndpointRequest;
+}
+
+/** Resolves both endpoints; fails if a name does not exist or several groups or peers share it. */
+export const resolveEndpoints = (props: PolicyProps, directory: Directory) =>
+  Effect.all({
+    from: resolveEndpoint(props.name, "from", props.from, directory),
+    to: resolveEndpoint(props.name, "to", props.to, directory),
   });
+
+/** The API request for a declaration with resolved endpoints. */
+export function toRequest(
+  props: PolicyProps,
+  { from, to }: ResolvedEndpoints,
+  ruleId?: string,
+): NetBird.CreatePolicyRequest {
+  const desired = desiredState(props);
+  return {
+    name: desired.name,
+    description: desired.description,
+    enabled: desired.enabled,
+    source_posture_checks: [],
+    rules: [
+      {
+        ...(ruleId === undefined ? {} : { id: ruleId }),
+        name: desired.ruleName,
+        description: "",
+        enabled: true,
+        action: "accept",
+        bidirectional: desired.bidirectional,
+        protocol: props.protocol,
+        ...(desired.ports.length === 0 ? {} : { ports: desired.ports.map(String) }),
+        ...("resource" in from ? { sourceResource: from.resource } : { sources: from.groups }),
+        ...("resource" in to ? { destinationResource: to.resource } : { destinations: to.groups }),
+      },
+    ],
+  };
+}
 
 /** Fails unless NetBird stored the declaration: NetBird silently drops unknown group IDs. */
 const verify = (fqn: string, policy: LivePolicy, desired: PolicyState, directory: Directory) =>
@@ -438,9 +449,11 @@ export const PolicyProvider = () =>
         return yield* new NetBirdPolicyRefused({
           message: `NetBird has ${matches.length} policies named "${olds.name}" (${matches.map((policy) => policy.id).join(", ")}). Rename or remove all but one in NetBird first.`,
         });
-      const { peerNames } = yield* loadDirectory;
-      const current = observe(match, peerNames);
-      // Checked here as well as in reconcile, so `plan --adopt` already shows a refused takeover.
+      const directory = yield* loadDirectory;
+      // Checked here as well as in reconcile, so `plan --adopt` already shows a refused takeover:
+      // even a policy that matches must name its groups and peers unambiguously.
+      yield* resolveEndpoints(olds, directory);
+      const current = observe(match, directory.peerNames);
       yield* checkWritable(fqn, match, current, desiredState(olds), true);
       const policyId = yield* idOf(match);
       return Unowned({ policyId, ...current });
@@ -456,12 +469,15 @@ export const PolicyProvider = () =>
       yield* validate(news);
       const desired = desiredState(news);
       const directory = yield* loadDirectory;
+      // Resolved on every path, also when NetBird already matches and nothing is written.
+      const endpoints = yield* resolveEndpoints(news, directory);
       const live = yield* observeLive(output);
       if (Option.isNone(live)) {
-        const body = yield* toRequest(news, directory);
         // A create is never repeated: if NetBird stored it before a connection failed, a retry
         // would add a second policy with the same name.
-        const created = yield* NetBird.createPolicy(body).pipe(NetBird.Retry.none);
+        const created = yield* NetBird.createPolicy(toRequest(news, endpoints)).pipe(
+          NetBird.Retry.none,
+        );
         return yield* verify(fqn, created, desired, directory);
       }
       const current = observe(live.value, directory.peerNames);
@@ -469,7 +485,7 @@ export const PolicyProvider = () =>
       yield* checkWritable(fqn, live.value, current, desired, olds === undefined);
       const policyId = yield* idOf(live.value);
       if (deepEqual(current, desired)) return { policyId, ...current };
-      const body = yield* toRequest(news, directory, live.value.rules[0]?.id);
+      const body = toRequest(news, endpoints, live.value.rules[0]?.id);
       const updated = yield* NetBird.putPolicy({ policyId, ...body });
       return yield* verify(fqn, updated, desired, directory);
     }),

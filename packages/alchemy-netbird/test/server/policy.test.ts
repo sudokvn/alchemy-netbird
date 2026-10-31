@@ -4,7 +4,15 @@ import * as Effect from "effect/Effect";
 import { beforeEach, describe, expect, it } from "vitest";
 import { observe } from "../../src/Policy.ts";
 import * as NetBird from "../../src/index.ts";
-import { dashboard, deleteAllPolicies, harness, idOf, policies, policyNamed } from "./harness.ts";
+import {
+  dashboard,
+  deleteAllPolicies,
+  harness,
+  idOf,
+  policies,
+  policyNamed,
+  renamePeer,
+} from "./harness.ts";
 
 const https = ({
   name = "admins -> servers (HTTPS)",
@@ -194,6 +202,33 @@ describe("NetBird.Policy", () => {
     await seed("admins -> servers (HTTPS)", {});
     const failure = await harness().deployFailure(https(), true);
     expect(failure).toContain('NetBird has 2 policies named "admins -> servers (HTTPS)"');
+  });
+
+  it("refuses a peer name that several peers share, even when NetBird already matches", async () => {
+    const peerA = await idOf("peers", "peer-a");
+    const peerB = await idOf("peers", "peer-b");
+    await seed("admins -> peer-a (SSH)", {
+      ports: ["22"],
+      destinations: undefined,
+      destinationResource: { id: peerA, type: "peer" },
+    });
+    const ssh = NetBird.Policy("admins-peer", {
+      name: "admins -> peer-a (SSH)",
+      from: { groups: ["admins"] },
+      to: { peer: "peer-a" },
+      protocol: "tcp",
+      ports: [22],
+    });
+    await renamePeer(peerB, "peer-a");
+    try {
+      const stack = harness();
+      const ambiguous = 'to peer "peer-a" is ambiguous (2 peers have this name)';
+      expect(await stack.planFailure(ssh, true)).toContain(ambiguous);
+      expect(await stack.deployFailure(ssh, true)).toContain(ambiguous);
+      expect(stack.writes).toEqual([]);
+    } finally {
+      await renamePeer(peerB, "peer-b");
+    }
   });
 
   it("deletes a removed policy unless it is retained", async () => {

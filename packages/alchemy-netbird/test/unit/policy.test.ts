@@ -6,6 +6,7 @@ import type { Policy as ApiPolicy } from "@distilled.cloud/netbird";
 import {
   desiredState,
   observe,
+  resolveEndpoints,
   toRequest,
   validate,
   type Directory,
@@ -88,9 +89,10 @@ describe("observe", () => {
   });
 });
 
-describe("toRequest", () => {
+describe("resolveEndpoints and toRequest", () => {
   it("resolves names to IDs and sends a peer as a resource", async () => {
-    const request = await Effect.runPromise(toRequest(props, directory, "rule-1"));
+    const endpoints = await Effect.runPromise(resolveEndpoints(props, directory));
+    const request = toRequest(props, endpoints, "rule-1");
     expect(request.rules).toEqual([
       {
         id: "rule-1",
@@ -112,7 +114,7 @@ describe("toRequest", () => {
     [{ groups: ["twins"] }, 'from group "twins" is ambiguous (2 groups have this name)'],
     [{ peer: "peer-z" }, 'from peer "peer-z" does not exist'],
   ] as const)("refuses an endpoint it cannot resolve", async (from, message) => {
-    const exit = await Effect.runPromiseExit(toRequest({ ...props, from }, directory));
+    const exit = await Effect.runPromiseExit(resolveEndpoints({ ...props, from }, directory));
     expect(Exit.isFailure(exit) && String(exit.cause)).toContain(message);
   });
 });

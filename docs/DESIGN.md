@@ -77,6 +77,8 @@ provider marks nothing. A policy found by name without state is returned as `Uno
 it over needs `--adopt`, and the provider refuses duplicate names. Adoption must not change access:
 it refuses a policy whose `enabled`, endpoints, direction, protocol or ports differ, both in `read`
 (so `plan --adopt` shows it) and in `reconcile`. It may rename the rule and change descriptions.
+Both also resolve the declared names first, so a matching policy whose group or peer name is
+missing or shared is refused, although adopting it would write nothing.
 For the same reason the provider implements no `list`, and `alchemy unsafe nuke` deletes nothing.
 
 **Unsupported settings.** A policy with posture checks, several rules, a disabled rule, port

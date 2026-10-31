@@ -41,6 +41,21 @@ export const idOf = async (kind: "groups" | "peers", name: string) => {
   return item.id;
 };
 
+/** Renames a peer and keeps its other settings, as in the dashboard. */
+export async function renamePeer(id: string, name: string) {
+  const peer = await dashboard<{
+    ssh_enabled: boolean;
+    login_expiration_enabled: boolean;
+    inactivity_expiration_enabled: boolean;
+  }>("GET", `/peers/${id}`);
+  await dashboard("PUT", `/peers/${id}`, {
+    name,
+    ssh_enabled: peer.ssh_enabled,
+    login_expiration_enabled: peer.login_expiration_enabled,
+    inactivity_expiration_enabled: peer.inactivity_expiration_enabled,
+  });
+}
+
 export async function deleteAllPolicies() {
   for (const policy of await policies()) await dashboard("DELETE", `/policies/${policy.id}`);
 }

@@ -107,8 +107,9 @@ drops them, so the provider also checks every write against what NetBird stored.
 - **Adoption:** NetBird policies carry no ownership marker, and NetBird allows duplicate names.
   A policy that exists without state therefore needs `--adopt`. Adoption refuses a policy whose
   access differs from the declaration: it may rename the rule and change descriptions, but
-  never `enabled`, `from`, `to`, `bidirectional`, `protocol` or `ports`. `plan --adopt` already
-  fails for such a policy. Make the declaration match NetBird first.
+  never `enabled`, `from`, `to`, `bidirectional`, `protocol` or `ports`. It also refuses a
+  declaration whose group or peer names are missing or shared, even when NetBird already matches.
+  `plan --adopt` already fails for such a policy. Make the declaration match NetBird first.
 - **Unsupported settings:** the provider refuses to change a policy that has posture checks,
   several rules, a disabled rule, port ranges, a `drop` action, SSH user mappings or a network
   resource as an endpoint, because writing it would drop those settings.
