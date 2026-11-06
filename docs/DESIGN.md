@@ -4,7 +4,7 @@ This document explains how the SDK and the provider are built and why. The packa
 describe how to use them: [`@distilled.cloud/netbird`](../packages/netbird/README.md) and
 [`@alchemy.run/netbird`](../packages/alchemy-netbird/README.md).
 
-The repository follows the layout of `trucke/alchemy-proxmox`: an SDK in distilled's style and an
+The repository follows the layout of `sudokvn/alchemy-proxmox`: an SDK in distilled's style and an
 Alchemy provider that calls only that SDK, as Alchemy's own providers do.
 
 ## Toolchain and packaging
